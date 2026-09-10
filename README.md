@@ -1,1 +1,1 @@
-randomText
+MarketPulse

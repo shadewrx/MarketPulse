@@ -1,10 +1,14 @@
+locals {
+  prefix = "market-pulse"
+}
+
 resource "google_project_service" "compute_api" {
   service            = "compute.googleapis.com"
   disable_on_destroy = false
 }
 
 resource "google_compute_network" "market_pulse_vpc" {
-  name                    = "market-pulse"
+  name                    = "${local.prefix}-vpc"
   auto_create_subnetworks = false
 
   depends_on = [
@@ -12,14 +16,14 @@ resource "google_compute_network" "market_pulse_vpc" {
   ]
 }
 resource "google_compute_subnetwork" "market_pulse_subnetwork" {
-  name          = "market-pulse-vm-subnet"
+  name          = "${local.prefix}-vm-subnet"
   ip_cidr_range = "10.10.0.0/24"
   region        = var.region
   network       = google_compute_network.market_pulse_vpc.id
 }
 
 resource "google_compute_firewall" "market_pulse_firewall_ssh" {
-  name        = "market-pulse-firewall-ssh"
+  name        = "${local.prefix}-firewall-ssh"
   network     = google_compute_network.market_pulse_vpc.id
   description = "Allow SSH ingress to tagged MarketPulse VMs"
   direction   = "INGRESS"
@@ -32,7 +36,7 @@ resource "google_compute_firewall" "market_pulse_firewall_ssh" {
 }
 
 resource "google_compute_firewall" "market_pulse_firewall_node" {
-  name        = "market-pulse-firewall-node"
+  name        = "${local.prefix}-firewall-node"
   network     = google_compute_network.market_pulse_vpc.id
   description = "Allow communication between tagged MarketPulse node VMs"
   direction   = "INGRESS"
@@ -52,13 +56,13 @@ resource "google_compute_firewall" "market_pulse_firewall_node" {
 }
 
 resource "google_compute_router" "market_pulse_router" {
-  name    = "market-pulse-router"
+  name    = "${local.prefix}-router"
   region  = google_compute_subnetwork.market_pulse_subnetwork.region
   network = google_compute_network.market_pulse_vpc.id
 }
 
 resource "google_compute_router_nat" "market_pulse_nat" {
-  name                               = "market-pulse-nat"
+  name                               = "${local.prefix}-nat"
   router                             = google_compute_router.market_pulse_router.name
   region                             = google_compute_router.market_pulse_router.region
   source_subnetwork_ip_ranges_to_nat = "ALL_SUBNETWORKS_ALL_IP_RANGES"
@@ -66,12 +70,12 @@ resource "google_compute_router_nat" "market_pulse_nat" {
 }
 
 resource "google_service_account" "market_pulse_node" {
-  account_id   = "market-pulse-node"
+  account_id   = "${local.prefix}-node"
   display_name = "Market Pulse Node"
 }
 
 resource "google_compute_instance" "market_pulse_vm_control_plane" {
-  name           = "market-pulse-plane-vm"
+  name           = "${local.prefix}-plane-vm"
   machine_type   = "e2-medium"
   can_ip_forward = true
   zone           = var.zone
@@ -93,7 +97,7 @@ resource "google_compute_instance" "market_pulse_vm_control_plane" {
 }
 
 resource "google_compute_instance" "market_pulse_vm_worker1" {
-  name           = "market-pulse-worker1-vm"
+  name           = "${local.prefix}-worker1-vm"
   machine_type   = "e2-standard-2"
   can_ip_forward = true
   zone           = var.zone
@@ -115,7 +119,7 @@ resource "google_compute_instance" "market_pulse_vm_worker1" {
 }
 
 resource "google_compute_instance" "market_pulse_vm_worker2" {
-  name           = "market-pulse-worker2-vm"
+  name           = "${local.prefix}-worker2-vm"
   machine_type   = "e2-standard-2"
   can_ip_forward = true
   zone           = var.zone

@@ -29,4 +29,3 @@ resource "google_compute_instance" "market_pulse_vm" {
     scopes = ["cloud-platform"]
   }
 }
-
